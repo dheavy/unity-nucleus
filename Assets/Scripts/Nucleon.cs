@@ -12,7 +12,7 @@ public class Nucleon : MonoBehaviour {
         body = GetComponent<Rigidbody>();
     }
 
-    void FixedUpdate() 
+    void FixedUpdate () 
     {
         body.AddForce(transform.localPosition * -attractionForce);
     }
