@@ -4,8 +4,14 @@ using UnityEngine.UI;
 [RequireComponent(typeof(FPSCounter))] 
 public class FPSDisplay : MonoBehaviour {
 
-    public Text fpsLabel;
+    public Text highestFPSLabel, averageFPSLabel, lowestFPSLabel;
+ 
+    // We're storing the FPS values of multiple frames
+    // in a buffer, using an index to set where the put
+    // data on the next frame.
     FPSCounter fpsCounter;
+    int fpsBufferIndex;
+    int[] fpsBuffer;
 
     static string[] stringsFrom00To99 = {
 		"00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
@@ -20,6 +26,18 @@ public class FPSDisplay : MonoBehaviour {
 		"90", "91", "92", "93", "94", "95", "96", "97", "98", "99"
 	};
 
+    public int HighestFPS { get; private set; }
+    public int LowestFPS { get; private set; }
+
+    void InitializeBuffer () 
+    {
+        if (frameRange <= 0) {
+            frameRange = 1;
+        }
+        fpsBuffer = new int[frameRange];
+        fpsBufferIndex = 0;
+    }
+
     void Awake () 
     {
         fpsCounter = GetComponent<FPSCounter>();
@@ -27,6 +45,42 @@ public class FPSDisplay : MonoBehaviour {
 
     void Update () 
     {
-        fpsLabel.text = stringsFrom00To99[Mathf.Clamp(fpsCounter.FPS, 0, 99).ToString()];
+        if (fpsBuffer == null || fpsBuffer.Length != frameRange) {
+            InitializeBuffer();
+        }
+        UpdateBuffer();
+        CalculateFPS();
+    }
+
+    void UpdateBuffer () 
+    {
+        fpsBuffer[fpsBufferIndex++] = (int)(1f / Time.unscaledDeltaTime);
+        if (fpsBufferIndex >= frameRange) {
+            fpsBufferIndex = 0;
+        }
+    }
+
+    void CalculateFPS ()
+    {
+        int sum = 0;
+        int highest = 0;
+        int lowest = int.MaxValue;
+
+        for (int i = 0; i < frameRange; i++) {
+            int fps = fpsBuffer[i];
+            sum += fps;
+
+            if (fps > highest) {
+                highest = fps;
+            }
+
+            if (fps < lowest) {
+                lowest = fps;
+            }
+        }
+        
+        AverageFPS = sum / frameRange;
+        HighestFPS = highest;
+        LowestFPS = lowest;
     }
 }
